@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -35,9 +36,11 @@ func (cli *CLI) Run(args []string) error {
 	}
 	dir := args[0]
 
+	var m sync.Mutex
 	eg, _ := errgroup.WithContext(context.Background())
 
-	var m sync.Mutex
+	f := bufio.NewWriter(cli.stdout)
+	defer f.Flush()
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		eg.Go(func() error {
@@ -53,7 +56,7 @@ func (cli *CLI) Run(args []string) error {
 			}
 
 			m.Lock()
-			fmt.Fprintf(cli.stdout, "%s\t%s\n", path, sha1sum)
+			f.WriteString(fmt.Sprintf("%s\t%s\n", path, sha1sum))
 			m.Unlock()
 
 			return nil
