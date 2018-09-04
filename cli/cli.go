@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/dtan4/imagemv/image"
+	"github.com/dtan4/imagemv/fileutil"
 
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -48,9 +48,7 @@ func (cli *CLI) Run(args []string) error {
 				return nil
 			}
 
-			i := image.New(path)
-
-			sha1sum, err := i.SHA1Sum()
+			sha1sum, err := fileutil.SHA1Sum(path)
 			if err != nil {
 				return errors.Wrapf(err, "cannot calculate SHA-1 checksum of %q", path)
 			}

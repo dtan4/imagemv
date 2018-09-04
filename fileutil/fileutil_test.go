@@ -1,19 +1,10 @@
-package image
+package fileutil
 
 import (
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-func TestNew(t *testing.T) {
-	path := "/path/to/image"
-	image := New(path)
-
-	if image == nil {
-		t.Errorf("image must be created")
-	}
-}
 
 func TestSha1Sum(t *testing.T) {
 	testcases := []struct {
@@ -31,11 +22,7 @@ func TestSha1Sum(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		image := &Image{
-			path: tc.path,
-		}
-
-		got, err := image.SHA1Sum()
+		got, err := SHA1Sum(tc.path)
 		if err != nil {
 			t.Errorf("got error: %s", err)
 		}
@@ -58,11 +45,7 @@ func TestSha1Sum_error(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		image := &Image{
-			path: tc.path,
-		}
-
-		_, err := image.SHA1Sum()
+		_, err := SHA1Sum(tc.path)
 		if err == nil {
 			t.Errorf("no error")
 		}
