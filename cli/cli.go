@@ -39,9 +39,22 @@ func (cli *CLI) Run(args []string) error {
 	cso := newConcurrentWriter(cli.stdout)
 	defer cso.Flush()
 
+	cse := newConcurrentWriter(cli.stderr)
+	defer cse.Flush()
+
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		eg.Go(func() error {
 			if info.IsDir() {
+				return nil
+			}
+
+			b, err := fileutil.IsImage(path)
+			if err != nil {
+				return errors.Wrapf(err, "cannot judge whether %q is an image or not", path)
+			}
+
+			if !b {
+				cse.WriteString(fmt.Sprintf("warning: %q is not an image\n", path))
 				return nil
 			}
 
