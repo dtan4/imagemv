@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/dtan4/imagemv/fileutil"
 
@@ -36,11 +34,10 @@ func (cli *CLI) Run(args []string) error {
 	}
 	dir := args[0]
 
-	var m sync.Mutex
 	eg, _ := errgroup.WithContext(context.Background())
 
-	f := bufio.NewWriter(cli.stdout)
-	defer f.Flush()
+	cso := newConcurrentWriter(cli.stdout)
+	defer cso.Flush()
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		eg.Go(func() error {
@@ -53,9 +50,7 @@ func (cli *CLI) Run(args []string) error {
 				return errors.Wrapf(err, "cannot calculate SHA-1 checksum of %q", path)
 			}
 
-			m.Lock()
-			f.WriteString(fmt.Sprintf("%s\t%s\n", path, sha1sum))
-			m.Unlock()
+			cso.WriteString(fmt.Sprintf("%s\t%s\n", path, sha1sum))
 
 			return nil
 		})
