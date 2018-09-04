@@ -9,7 +9,7 @@ import (
 func main() {
 	c := cli.New(os.Stdout, os.Stderr)
 
-	if err := c.Run(os.Args); err != nil {
+	if err := c.Run(os.Args[1:]); err != nil {
 		if os.Getenv("DEBUG") == "1" {
 			fmt.Fprintf(os.Stderr, "%+v\n", err)
 		} else {
