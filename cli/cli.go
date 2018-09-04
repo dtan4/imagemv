@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -30,12 +31,18 @@ func (cli *CLI) Run(args []string) error {
 	}
 	dir := args[0]
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
+	m := sync.Mutex{}
 
-		fmt.Fprintln(cli.stdout, path)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		go func() {
+			if info.IsDir() {
+				return
+			}
+
+			m.Lock()
+			fmt.Fprintln(cli.stdout, path)
+			m.Unlock()
+		}()
 
 		return nil
 	})
