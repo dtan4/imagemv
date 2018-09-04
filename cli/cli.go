@@ -1,13 +1,17 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/dtan4/imagemv/image"
+
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 // CLI represents CLI object
@@ -31,18 +35,33 @@ func (cli *CLI) Run(args []string) error {
 	}
 	dir := args[0]
 
-	m := sync.Mutex{}
+	eg, _ := errgroup.WithContext(context.Background())
+
+	var m sync.Mutex
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		go func() {
+		eg.Go(func() error {
 			if info.IsDir() {
-				return
+				return nil
+			}
+
+			i := image.New(path)
+
+			sha1sum, err := i.SHA1Sum()
+			if err != nil {
+				return errors.Wrapf(err, "cannot calculate SHA-1 checksum of %q", path)
 			}
 
 			m.Lock()
-			fmt.Fprintln(cli.stdout, path)
+			fmt.Fprintf(cli.stdout, "%s\t%s\n", path, sha1sum)
 			m.Unlock()
-		}()
+
+			return nil
+		})
+
+		if err := eg.Wait(); err != nil {
+			return errors.Wrap(err, "something wrong occured during for some files")
+		}
 
 		return nil
 	})
