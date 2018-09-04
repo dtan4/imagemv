@@ -34,7 +34,9 @@ func (cli *CLI) Run(args []string) error {
 	}
 	dir := args[0]
 
-	eg, _ := errgroup.WithContext(context.Background())
+	eg, ctx := errgroup.WithContext(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	cso := newConcurrentWriter(cli.stdout)
 	defer cso.Flush()
@@ -44,38 +46,45 @@ func (cli *CLI) Run(args []string) error {
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		eg.Go(func() error {
-			if info.IsDir() {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
+			default:
+				if info.IsDir() {
+					return nil
+				}
 
-			b, err := fileutil.IsImage(path)
-			if err != nil {
-				return errors.Wrapf(err, "cannot judge whether %q is an image or not", path)
-			}
+				b, err := fileutil.IsImage(path)
+				if err != nil {
+					return errors.Wrapf(err, "cannot judge whether %q is an image or not", path)
+				}
 
-			if !b {
-				cse.WriteString(fmt.Sprintf("warning: %q is not an image\n", path))
-				return nil
-			}
+				if !b {
+					cse.WriteString(fmt.Sprintf("warning: %q is not an image\n", path))
+					return nil
+				}
 
-			sha1sum, err := fileutil.SHA1Sum(path)
-			if err != nil {
-				return errors.Wrapf(err, "cannot calculate SHA-1 checksum of %q", path)
-			}
+				sha1sum, err := fileutil.SHA1Sum(path)
+				if err != nil {
+					return errors.Wrapf(err, "cannot calculate SHA-1 checksum of %q", path)
+				}
 
-			cso.WriteString(fmt.Sprintf("%s\t%s\n", path, sha1sum))
+				cso.WriteString(fmt.Sprintf("%s\t%s\n", path, sha1sum))
+			}
 
 			return nil
 		})
 
-		if err := eg.Wait(); err != nil {
-			return errors.Wrap(err, "something wrong occured during for some files")
-		}
-
 		return nil
 	})
+
 	if err != nil {
 		return errors.Wrapf(err, "something wrong occured during walking dir %q", dir)
+	}
+
+	if err := eg.Wait(); err != nil {
+		cancel()
+		return errors.Wrap(err, "something wrong occured during for some files")
 	}
 
 	return nil
