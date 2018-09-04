@@ -25,12 +25,25 @@
   pruneopts = "UT"
   revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
+[[projects]]
+  digest = "1:8b1a1e6d3dcef7c542f604f8b9f8013d1d13c3d61f8e9cbe368afa2735c898c2"
+  name = "gopkg.in/h2non/filetype.v1"
+  packages = [
+    ".",
+    "matchers",
+    "types",
+  ]
+  pruneopts = "UT"
+  revision = "cc14fdc9ca0e4c2bafad7458f6ff79fd3947cfbb"
+  version = "v1.0.5"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/pkg/errors",
     "golang.org/x/sync/errgroup",
+    "gopkg.in/h2non/filetype.v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

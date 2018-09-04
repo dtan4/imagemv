@@ -6,6 +6,37 @@ import (
 	"testing"
 )
 
+func TestIsImage(t *testing.T) {
+	testcases := []struct {
+		path string
+		want bool
+	}{
+		{
+			path: filepath.Join("..", "testdata", "320x200.jpg"),
+			want: true,
+		},
+		{
+			path: filepath.Join("..", "testdata", "320x200.png"),
+			want: true,
+		},
+		{
+			path: filepath.Join("..", "testdata", "testdata.txt"),
+			want: false,
+		},
+	}
+
+	for _, tc := range testcases {
+		got, err := IsImage(tc.path)
+		if err != nil {
+			t.Errorf("got error: %s", err)
+		}
+
+		if got != tc.want {
+			t.Errorf("want: %v, got: %v", tc.want, got)
+		}
+	}
+}
+
 func TestSha1Sum(t *testing.T) {
 	testcases := []struct {
 		path string
